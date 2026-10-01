@@ -14,7 +14,7 @@ export default function Home() {
         <Header />
       </div>
 
-      <main className="flex-1 w-full max-w-md mx-auto px-5 py-6 flex flex-col justify-between">
+      <main className="flex-1 w-full max-w-md mx-auto px-5 py-6 flex flex-col">
         <div className="flex flex-col gap-6">
           {/* Seção de boas-vindas */}
           <div className="flex flex-col gap-1 pt-2">
@@ -47,7 +47,7 @@ export default function Home() {
         </div>
 
         {/* Lembrete no rodapé */}
-        <div className="mt-8 pt-4">
+        <div className="mt-auto pt-8">
           <ReminderCard message="Segunda-feira é P-Day (sem agendamento)." />
         </div>
       </main>
