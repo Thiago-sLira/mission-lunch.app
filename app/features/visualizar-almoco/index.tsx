@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Agendamento, DUPLAS_CONFIG, Dupla, isDataDesabilitada } from "@/app/types/agendamento";
+import { Agendamento, DUPLAS_CONFIG, isDataDesabilitada } from "@/app/types/agendamento";
 import { getAgendamentos } from "@/app/services/agendamentos";
 import {
-  formatarDataCurta,
   formatarDataISO,
   formatarTituloDia,
-  getProximosNDias,
+  getDiasDoMes,
+  MESES,
 } from "@/app/utils/date";
 
 interface VisualizarAlmocosProps {
@@ -15,10 +15,35 @@ interface VisualizarAlmocosProps {
 }
 
 export default function VisualizarAlmocos({ onVoltar }: VisualizarAlmocosProps) {
+  const hoje = new Date();
+  const mesAtual = hoje.getMonth();
+  const anoAtual = hoje.getFullYear();
+
+  const mesSeguinte = mesAtual === 11 ? 0 : mesAtual + 1;
+  const anoSeguinte = mesAtual === 11 ? anoAtual + 1 : anoAtual;
+
+  const [ano, setAno] = useState(anoAtual);
+  const [mes, setMes] = useState(mesAtual);
+
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+
+  const isMesAtual = ano === anoAtual && mes === mesAtual;
+  const isMesSeguinte = ano === anoSeguinte && mes === mesSeguinte;
+
+  const handleMesAnterior = () => {
+    if (isMesAtual) return;
+    setAno(anoAtual);
+    setMes(mesAtual);
+  };
+
+  const handleProximoMes = () => {
+    if (isMesSeguinte) return;
+    setAno(anoSeguinte);
+    setMes(mesSeguinte);
+  };
 
   const carregarDados = () => {
     setCarregando(true);
@@ -41,10 +66,17 @@ export default function VisualizarAlmocos({ onVoltar }: VisualizarAlmocosProps) 
     carregarDados();
   }, []);
 
-  const hoje = new Date();
-  const proximos7Dias = getProximosNDias(7, hoje);
-  const dataInicioStr = formatarDataCurta(proximos7Dias[0]);
-  const dataFimStr = formatarDataCurta(proximos7Dias[proximos7Dias.length - 1]);
+  // Dias a exibir: no mês atual, apenas a partir de hoje; no mês seguinte, todos
+  const hojeClean = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  const diasDoMes = getDiasDoMes(ano, mes).filter((dia) => {
+    if (isMesAtual) {
+      const diaClean = new Date(dia.getFullYear(), dia.getMonth(), dia.getDate());
+      return diaClean.getTime() >= hojeClean.getTime();
+    }
+    return true;
+  });
+
+  const mesNome = MESES[mes];
 
   return (
     <div className="flex flex-col min-h-screen bg-[#EEF2F7]">
@@ -79,15 +111,59 @@ export default function VisualizarAlmocos({ onVoltar }: VisualizarAlmocosProps) 
 
       {/* Conteúdo */}
       <main className="flex-1 w-full max-w-md mx-auto px-4 py-5 flex flex-col gap-4">
-        {/* Badge Próximos 7 Dias */}
-        <div className="bg-white rounded-xl px-4 py-3 border border-gray-200/80 shadow-xs flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="font-bold text-gray-900 text-sm">Próximos 7 Dias</span>
-          </div>
-          <span className="text-xs font-medium text-gray-500">
-            {dataInicioStr} a {dataFimStr}
+        {/* Navegador de Mês */}
+        <div className="bg-white rounded-2xl px-5 py-4 border border-gray-200/90 shadow-xs flex items-center justify-between">
+          <button
+            onClick={handleMesAnterior}
+            disabled={isMesAtual}
+            aria-label="Mês anterior"
+            className={`p-2 rounded-lg transition-colors ${
+              isMesAtual
+                ? "text-gray-300 cursor-not-allowed opacity-40"
+                : "text-gray-700 hover:bg-gray-100 cursor-pointer"
+            }`}
+          >
+            <svg
+              className="w-5 h-5 stroke-current"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="2.5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15.75 19.5L8.25 12l7.5-7.5"
+              />
+            </svg>
+          </button>
+
+          <span className="text-lg font-bold text-gray-900 tracking-tight">
+            {mesNome} {ano}
           </span>
+
+          <button
+            onClick={handleProximoMes}
+            disabled={isMesSeguinte}
+            aria-label="Próximo mês"
+            className={`p-2 rounded-lg transition-colors ${
+              isMesSeguinte
+                ? "text-gray-300 cursor-not-allowed opacity-40"
+                : "text-gray-700 hover:bg-gray-100 cursor-pointer"
+            }`}
+          >
+            <svg
+              className="w-5 h-5 stroke-current"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="2.5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M8.25 4.5l7.5 7.5-7.5 7.5"
+              />
+            </svg>
+          </button>
         </div>
 
         {/* Loading state */}
@@ -123,7 +199,7 @@ export default function VisualizarAlmocos({ onVoltar }: VisualizarAlmocosProps) 
         {/* Lista de Dias */}
         {!carregando && !erro && (
           <div className="flex flex-col gap-3.5 pb-6">
-            {proximos7Dias.map((dia) => {
+            {diasDoMes.map((dia) => {
               const diaISO = formatarDataISO(dia);
               const { tag, diaSemana, diaEMes } = formatarTituloDia(dia, hoje);
 
@@ -218,10 +294,7 @@ export default function VisualizarAlmocos({ onVoltar }: VisualizarAlmocosProps) 
                             {temAgendamento ? (
                               <>
                                 <span className="font-semibold text-gray-900 leading-snug">
-                                  {agendamento.nome_familia.toLowerCase().startsWith("almoço") ||
-                                  agendamento.nome_familia.toLowerCase().startsWith("com ")
-                                    ? agendamento.nome_familia
-                                    : `Almoço na ${agendamento.nome_familia}`}
+                                  {agendamento.nome_familia}
                                 </span>
                                 {agendamento.observacao && (
                                   <span className="text-xs text-gray-500 mt-0.5">

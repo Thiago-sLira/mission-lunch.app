@@ -79,6 +79,7 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
   const mesNome = MESES[mes];
 
   const handleAbrirAgendamento = (dia: Date, disponiveis: Dupla[], desabilitadas: Dupla[]) => {
+    window.scrollTo({ top: 0, behavior: "instant" });
     setDiaSelecionado(dia);
     setDuplasDisponiveisParaDia(disponiveis);
     setDuplasDesabilitadasParaDia(desabilitadas);
@@ -232,6 +233,16 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
           </button>
         </div>
 
+        {/* Legenda */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-xs px-2.5 py-1 rounded-md font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200/60">
+            Disponível para agendamento
+          </span>
+          <span className="text-xs px-2.5 py-1 rounded-md font-semibold border bg-gray-100 text-gray-500 border-gray-200">
+            Almoço já agendado ou indisponível
+          </span>
+        </div>
+
         {/* Subtítulo */}
         <div className="pt-1">
           <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
@@ -360,13 +371,8 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
                           }`}
                         >
                           <span>{conf.shortLabel}</span>
-                          <span>
-                            {isLivre
-                              ? "Livre ✓"
-                              : isDesabilitada
-                              ? "Indisponível"
-                              : "✕"}
-                          </span>
+                          {isLivre && <span>Livre</span>}
+                          {!isLivre && isDesabilitada && <span>Indisponível</span>}
                         </span>
                       );
                     })}

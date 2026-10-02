@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Header from "@/app/components/Header";
 import ActionCard from "@/app/components/ActionCard";
-import ReminderCard from "@/app/components/ReminderCard";
 import MarcarAlmoco from "@/app/features/marcar-almoco";
 import VisualizarAlmocos from "@/app/features/visualizar-almoco";
 
@@ -31,7 +30,7 @@ export default function Home() {
           {/* Seção de boas-vindas */}
           <div className="flex flex-col gap-1 pt-2">
             <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
-              Olá! Seja bem-vindo(a)
+              Ala Canhema Taboão
             </h2>
             <p className="text-base text-gray-600">
               Escolha uma opção para continuar:
@@ -58,10 +57,10 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Lembrete no rodapé */}
-        <div className="mt-auto pt-8">
-          <ReminderCard message="Segunda-feira é P-Day (sem agendamento)." />
-        </div>
+        {/* Rodapé comunitário */}
+        <p className="mt-auto pt-8 text-xs text-center text-gray-400">
+          Aplicação comunitária sem fins lucrativos desenvolvida para apoio ao trabalho missionário
+        </p>
       </main>
     </div>
   );

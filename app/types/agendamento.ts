@@ -42,15 +42,15 @@ export const DUPLAS_CONFIG: {
 }[] = [
   {
     id: "ELDERES_1",
-    label: "Élderes 1",
-    shortLabel: "Élderes 1",
+    label: "Dupla Élderes 1",
+    shortLabel: "Dupla Élderes 1",
     badgeBg: "bg-blue-100",
     badgeText: "text-blue-700",
   },
   {
     id: "ELDERES_2",
-    label: "Élderes 2",
-    shortLabel: "Élderes 2",
+    label: "Dupla Élderes 2",
+    shortLabel: "Dupla Élderes 2",
     badgeBg: "bg-indigo-100",
     badgeText: "text-indigo-700",
   },

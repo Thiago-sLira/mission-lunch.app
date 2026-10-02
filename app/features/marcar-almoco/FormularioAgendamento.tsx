@@ -24,13 +24,18 @@ export default function FormularioAgendamento({
     duplasDisponiveis.length === 1 ? [duplasDisponiveis[0]] : []
   );
   const [nomeFamilia, setNomeFamilia] = useState("");
+  const [nomeError, setNomeError] = useState<string | null>(null);
   const [observacao, setObservacao] = useState("");
   const [termoAceito, setTermoAceito] = useState(false);
 
   const [enviando, setEnviando] = useState(false);
   const [erroEnvio, setErroEnvio] = useState<string | null>(null);
 
+  const isUnicaDuplaDisponivel = duplasDisponiveis.length === 1;
+
   const toggleDupla = (id: Dupla) => {
+    // Não permite desmarcar se é a única opção disponível
+    if (isUnicaDuplaDisponivel && duplasDisponiveis.includes(id)) return;
     if (duplasSelecionadas.includes(id)) {
       setDuplasSelecionadas(duplasSelecionadas.filter((d) => d !== id));
     } else {
@@ -38,11 +43,22 @@ export default function FormularioAgendamento({
     }
   };
 
+  const handleNomeBlur = () => {
+    const trimmed = nomeFamilia.trim();
+    if (trimmed.length > 0 && trimmed.length < 4) {
+      setNomeError(
+        "Por favor, informe seu nome e sobrenome ou nome da família (mínimo de 4 caracteres)"
+      );
+    } else {
+      setNomeError(null);
+    }
+  };
+
   const { diaSemana, diaEMes } = formatarTituloDia(data);
 
   const formValido =
     duplasSelecionadas.length > 0 &&
-    nomeFamilia.trim().length > 0 &&
+    nomeFamilia.trim().length >= 4 &&
     termoAceito;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -159,11 +175,15 @@ export default function FormularioAgendamento({
                   );
                 }
 
+                const isLockedSingle = isUnicaDuplaDisponivel && duplasDisponiveis.includes(conf.id);
+
                 return (
                   <label
                     key={conf.id}
                     onClick={() => toggleDupla(conf.id)}
-                    className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border transition-all cursor-pointer ${
+                    className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border transition-all ${
+                      isLockedSingle ? "cursor-default" : "cursor-pointer"
+                    } ${
                       isSelected
                         ? "border-[#1B2A6B] bg-blue-50/40 ring-1 ring-[#1B2A6B]"
                         : "border-gray-200 bg-white hover:border-gray-300"
@@ -208,17 +228,26 @@ export default function FormularioAgendamento({
                 htmlFor="nome_familia"
                 className="text-xs font-semibold text-gray-700"
               >
-                Nome / Família <span className="text-red-500">*</span>
+                Nome e Sobrenome / Família <span className="text-red-500">*</span>
               </label>
               <input
                 id="nome_familia"
                 type="text"
                 required
                 value={nomeFamilia}
-                onChange={(e) => setNomeFamilia(e.target.value)}
-                placeholder="Ex: Família Silva"
-                className="w-full px-3.5 py-3 rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B2A6B] focus:border-transparent text-sm"
+                onChange={(e) => {
+                  setNomeFamilia(e.target.value);
+                  if (nomeError && e.target.value.trim().length >= 4) setNomeError(null);
+                }}
+                onBlur={handleNomeBlur}
+                placeholder="Nome e Sobrenome ou Família"
+                className={`w-full px-3.5 py-3 rounded-xl border bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B2A6B] focus:border-transparent text-sm ${
+                  nomeError ? "border-red-400" : "border-gray-300"
+                }`}
               />
+              {nomeError && (
+                <p className="text-xs text-red-600 mt-0.5">{nomeError}</p>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -226,14 +255,13 @@ export default function FormularioAgendamento({
                 htmlFor="observacao"
                 className="text-xs font-semibold text-gray-700"
               >
-                Observação (Opcional)
+                Instruções para os missionários (opcional)
               </label>
               <input
                 id="observacao"
                 type="text"
                 value={observacao}
                 onChange={(e) => setObservacao(e.target.value)}
-                placeholder="Ex: Sem pimentão na comida"
                 className="w-full px-3.5 py-3 rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B2A6B] focus:border-transparent text-sm"
               />
             </div>
@@ -250,13 +278,13 @@ export default function FormularioAgendamento({
                 Regras da casa (adultos 18+ presentes):
                 <ul className="list-disc pl-4 pt-1 space-y-0.5 text-red-900 font-normal">
                   <li>
-                    <strong className="font-semibold text-red-950">Apenas Élderes:</strong> precisa de um homem adulto presente.
+                    <strong className="font-semibold text-red-950">Apenas Élderes:</strong> precisa de pelo menos um homem adulto presente.
                   </li>
                   <li>
-                    <strong className="font-semibold text-red-950">Apenas Sisteres:</strong> precisa de uma mulher adulta presente.
+                    <strong className="font-semibold text-red-950">Apenas Sisteres:</strong> precisa de pelo menos uma mulher adulta presente.
                   </li>
                   <li>
-                    <strong className="font-semibold text-red-950">Ambas as duplas:</strong> precisa de homem e mulher adultos.
+                    <strong className="font-semibold text-red-950">Élderes e Sisteres:</strong> precisa de pelo menos um homem adulto e pelo menos uma mulher adulta presentes.
                   </li>
                 </ul>
               </li>
