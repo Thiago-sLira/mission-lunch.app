@@ -1,12 +1,24 @@
 "use client";
 
+import { useState } from "react";
 import Header from "@/app/components/Header";
 import ActionCard from "@/app/components/ActionCard";
 import ReminderCard from "@/app/components/ReminderCard";
+import MarcarAlmoco from "@/app/features/marcar-almoco";
+import VisualizarAlmocos from "@/app/features/visualizar-almoco";
+
+type View = "home" | "marcar" | "visualizar";
 
 export default function Home() {
-  const handleMarcarAlmoco = () => {};
-  const handleVisualizarAlmocos = () => {};
+  const [currentView, setCurrentView] = useState<View>("home");
+
+  if (currentView === "marcar") {
+    return <MarcarAlmoco onVoltar={() => setCurrentView("home")} />;
+  }
+
+  if (currentView === "visualizar") {
+    return <VisualizarAlmocos onVoltar={() => setCurrentView("home")} />;
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-[var(--background)]">
@@ -33,15 +45,15 @@ export default function Home() {
               title="MARCAR ALMOÇO"
               description="Escolha um dia e ofereça uma refeição às duplas"
               variant="filled"
-              onClick={handleMarcarAlmoco}
+              onClick={() => setCurrentView("marcar")}
             />
 
             <ActionCard
               icon="👀"
               title="VISUALIZAR ALMOÇOS"
-              description="Consulte a escala dos próximos 5 dias"
+              description="Consulte a escala dos próximos 7 dias"
               variant="outlined"
-              onClick={handleVisualizarAlmocos}
+              onClick={() => setCurrentView("visualizar")}
             />
           </div>
         </div>
