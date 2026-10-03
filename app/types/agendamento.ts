@@ -1,5 +1,23 @@
 export type Dupla = "ELDERES_1" | "ELDERES_2" | "SISTERES";
 
+/** Resposta do POST quando há conflito de agendamento duplicado */
+export interface ConflictResponse {
+  status: "conflict";
+  code: "DUPLICATE_BOOKING";
+  conflitos: Dupla[];
+  message: string;
+}
+
+/** Erro tipado lançado pela camada de serviço em caso de conflito */
+export class BookingConflictError extends Error {
+  readonly conflitos: Dupla[];
+  constructor(conflitos: Dupla[], message: string) {
+    super(message);
+    this.name = "BookingConflictError";
+    this.conflitos = conflitos;
+  }
+}
+
 export interface Agendamento {
   id?: string;
   data: string; // formato "YYYY-MM-DD"
@@ -56,8 +74,8 @@ export const DUPLAS_CONFIG: {
   },
   {
     id: "SISTERES",
-    label: "Sisteres",
-    shortLabel: "Sisteres",
+    label: "Dupla Sisteres",
+    shortLabel: "Dupla Sisteres",
     badgeBg: "bg-emerald-100",
     badgeText: "text-emerald-800",
   },

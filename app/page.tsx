@@ -50,7 +50,7 @@ export default function Home() {
             <ActionCard
               icon="👀"
               title="VISUALIZAR ALMOÇOS"
-              description="Consulte a escala dos próximos 7 dias"
+              description="Consulte a escala do mês atual ou do próximo mês"
               variant="outlined"
               onClick={() => setCurrentView("visualizar")}
             />

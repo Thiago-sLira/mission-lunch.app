@@ -1,4 +1,9 @@
-import { Agendamento, NovoAgendamentoPayload } from "@/app/types/agendamento";
+import {
+  Agendamento,
+  BookingConflictError,
+  ConflictResponse,
+  NovoAgendamentoPayload,
+} from "@/app/types/agendamento";
 
 export async function getAgendamentos(): Promise<Agendamento[]> {
   const res = await fetch("/api/agendamentos", {
@@ -23,7 +28,7 @@ export async function getAgendamentos(): Promise<Agendamento[]> {
 
 export async function criarAgendamentos(
   payload: NovoAgendamentoPayload[]
-): Promise<unknown> {
+): Promise<void> {
   const res = await fetch("/api/agendamentos", {
     method: "POST",
     headers: {
@@ -37,5 +42,12 @@ export async function criarAgendamentos(
     throw new Error(errorData.error || "Erro ao registrar agendamentos.");
   }
 
-  return await res.json();
+  const data = await res.json() as { status: string } & Partial<ConflictResponse>;
+
+  if (data.status === "conflict" && data.conflitos) {
+    throw new BookingConflictError(
+      data.conflitos,
+      data.message ?? "Uma ou mais duplas selecionadas já foram agendadas ou estão indisponíveis para esta data."
+    );
+  }
 }

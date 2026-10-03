@@ -75,7 +75,14 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
     setMes(mesSeguinte);
   };
 
-  const diasDoMes = getDiasDoMes(ano, mes);
+  const hojeClean = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  const diasDoMes = getDiasDoMes(ano, mes).filter((dia) => {
+    if (isMesAtual) {
+      const diaClean = new Date(dia.getFullYear(), dia.getMonth(), dia.getDate());
+      return diaClean.getTime() >= hojeClean.getTime();
+    }
+    return true;
+  });
   const mesNome = MESES[mes];
 
   const handleAbrirAgendamento = (dia: Date, disponiveis: Dupla[], desabilitadas: Dupla[]) => {
@@ -91,6 +98,11 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
     carregarDados();
   };
 
+  const handleConflitoAgendamento = () => {
+    setDiaSelecionado(null);
+    carregarDados();
+  };
+
   // Se o usuário estiver na tela de formulário de confirmação
   if (diaSelecionado) {
     return (
@@ -100,6 +112,7 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
         duplasDesabilitadas={duplasDesabilitadasParaDia}
         onVoltar={() => setDiaSelecionado(null)}
         onSucesso={handleSucessoAgendamento}
+        onConflito={handleConflitoAgendamento}
       />
     );
   }
@@ -286,11 +299,6 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
               const diaISO = formatarDataISO(dia);
               const { diaSemana, diaEMes } = formatarTituloDia(dia);
 
-              // Checar se o dia é no passado
-              const hojeClean = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-              const diaClean = new Date(dia.getFullYear(), dia.getMonth(), dia.getDate());
-              const isPassado = diaClean.getTime() < hojeClean.getTime();
-
               // Registros deste dia na planilha
               const registrosDoDia = agendamentos.filter(
                 (a) => a.data && a.data.startsWith(diaISO)
@@ -339,7 +347,7 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
               }
 
               const totalmenteOcupado = duplasLivres.length === 0;
-              const podeAgendar = !isPassado && !totalmenteOcupado;
+              const podeAgendar = !totalmenteOcupado;
 
               return (
                 <div
@@ -357,7 +365,6 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
                   <div className="flex flex-wrap gap-2">
                     {DUPLAS_CONFIG.map((conf) => {
                       const isLivre = duplasLivres.includes(conf.id);
-                      const isDesabilitada = duplasDesabilitadas.includes(conf.id);
 
                       return (
                         <span
@@ -365,28 +372,18 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
                           className={`text-xs px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 ${
                             isLivre
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
-                              : isDesabilitada
-                              ? "bg-gray-100 text-gray-500 border border-gray-200"
                               : "bg-gray-100 text-gray-400 border border-gray-200"
                           }`}
                         >
                           <span>{conf.shortLabel}</span>
                           {isLivre && <span>Livre</span>}
-                          {!isLivre && isDesabilitada && <span>Indisponível</span>}
                         </span>
                       );
                     })}
                   </div>
 
                   {/* Botão de Agendamento */}
-                  {isPassado ? (
-                    <button
-                      disabled
-                      className="w-full py-3 bg-gray-100 text-gray-400 rounded-xl font-bold text-sm cursor-not-allowed"
-                    >
-                      Data no passado
-                    </button>
-                  ) : totalmenteOcupado ? (
+                  {totalmenteOcupado ? (
                     <button
                       disabled
                       className="w-full py-3 bg-gray-100 text-gray-400 rounded-xl font-bold text-sm cursor-not-allowed"

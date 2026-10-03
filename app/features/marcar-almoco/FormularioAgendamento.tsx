@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Dupla, DUPLAS_CONFIG, NovoAgendamentoPayload } from "@/app/types/agendamento";
+import {
+  BookingConflictError,
+  Dupla,
+  DUPLAS_CONFIG,
+  NovoAgendamentoPayload,
+} from "@/app/types/agendamento";
 import { formatarTituloDia } from "@/app/utils/date";
 import { criarAgendamentos } from "@/app/services/agendamentos";
 
@@ -11,6 +16,8 @@ interface FormularioAgendamentoProps {
   duplasDesabilitadas: Dupla[];
   onVoltar: () => void;
   onSucesso: () => void;
+  /** Chamado ao receber conflito: o pai deve recarregar dados e voltar à grade */
+  onConflito: () => void;
 }
 
 export default function FormularioAgendamento({
@@ -19,6 +26,7 @@ export default function FormularioAgendamento({
   duplasDesabilitadas,
   onVoltar,
   onSucesso,
+  onConflito,
 }: FormularioAgendamentoProps) {
   const [duplasSelecionadas, setDuplasSelecionadas] = useState<Dupla[]>(
     duplasDisponiveis.length === 1 ? [duplasDisponiveis[0]] : []
@@ -30,6 +38,7 @@ export default function FormularioAgendamento({
 
   const [enviando, setEnviando] = useState(false);
   const [erroEnvio, setErroEnvio] = useState<string | null>(null);
+  const [conflitoDuplas, setConflitoDuplas] = useState<Dupla[] | null>(null);
 
   const isUnicaDuplaDisponivel = duplasDisponiveis.length === 1;
 
@@ -86,9 +95,13 @@ export default function FormularioAgendamento({
       setEnviando(false);
       onSucesso();
     } catch (err) {
-      console.error(err);
-      setErroEnvio("Ocorreu um erro ao salvar o agendamento. Tente novamente.");
       setEnviando(false);
+      if (err instanceof BookingConflictError) {
+        setConflitoDuplas(err.conflitos);
+      } else {
+        console.error(err);
+        setErroEnvio("Ocorreu um erro ao salvar o agendamento. Tente novamente.");
+      }
     }
   };
 
@@ -344,7 +357,7 @@ export default function FormularioAgendamento({
               {enviando ? (
                 <div className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>ENVIANDO AGENDAMENTO...</span>
+                  <span>VERIFICANDO E AGENDANDO...</span>
                 </div>
               ) : (
                 "CONFIRMAR AGENDAMENTO"
@@ -362,6 +375,70 @@ export default function FormularioAgendamento({
           </div>
         </form>
       </main>
+
+      {/* Modal de Conflito */}
+      {conflitoDuplas && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-black/40" />
+
+          {/* Painel */}
+          <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-xl flex flex-col gap-5 p-6">
+            {/* Ícone de aviso */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                <svg
+                  className="w-5 h-5 text-amber-600 stroke-current"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-base font-bold text-gray-900 leading-snug">
+                Agendamento indisponível
+              </h2>
+            </div>
+
+            {/* Mensagem */}
+            <p className="text-sm text-gray-700 leading-relaxed">
+              Ops!{" "}
+              {conflitoDuplas.length === 1 ? (
+                <>
+                  O agendamento para{" "}
+                  <strong className="font-semibold text-gray-900">
+                    {DUPLAS_CONFIG.find((c) => c.id === conflitoDuplas[0])?.label}
+                  </strong>{" "}
+                  acabou de ser preenchido por outra pessoa ou ficou indisponível nesta data.
+                </>
+              ) : (
+                <>
+                  Os agendamentos para{" "}
+                  <strong className="font-semibold text-gray-900">
+                    {conflitoDuplas
+                      .map((id) => DUPLAS_CONFIG.find((c) => c.id === id)?.label)
+                      .join(" e ")}
+                  </strong>{" "}
+                  acabaram de ser preenchidos por outra pessoa ou ficaram indisponíveis nesta data.
+                </>
+              )}
+            </p>
+
+            {/* Botão de ação */}
+            <button
+              onClick={onConflito}
+              className="w-full py-3.5 bg-[#1B2A6B] hover:bg-[#152154] text-white font-bold text-sm rounded-xl transition-colors cursor-pointer shadow-sm active:scale-[0.99]"
+            >
+              Escolher outro dia ou dupla
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
