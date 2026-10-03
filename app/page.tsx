@@ -5,8 +5,9 @@ import Header from "@/app/components/Header";
 import ActionCard from "@/app/components/ActionCard";
 import MarcarAlmoco from "@/app/features/marcar-almoco";
 import VisualizarAlmocos from "@/app/features/visualizar-almoco";
+import BloquearDatas from "@/app/features/bloquear-datas";
 
-type View = "home" | "marcar" | "visualizar";
+type View = "home" | "marcar" | "visualizar" | "bloquear";
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<View>("home");
@@ -17,6 +18,10 @@ export default function Home() {
 
   if (currentView === "visualizar") {
     return <VisualizarAlmocos onVoltar={() => setCurrentView("home")} />;
+  }
+
+  if (currentView === "bloquear") {
+    return <BloquearDatas onVoltar={() => setCurrentView("home")} />;
   }
 
   return (
@@ -54,6 +59,16 @@ export default function Home() {
               variant="outlined"
               onClick={() => setCurrentView("visualizar")}
             />
+
+            {process.env.NODE_ENV === "development" && (
+              <ActionCard
+                icon="🚫"
+                title="BLOQUEAR DATAS"
+                description="Desabilitar dias na escala (Acesso Admin)"
+                variant="outlined"
+                onClick={() => setCurrentView("bloquear")}
+              />
+            )}
           </div>
         </div>
 
