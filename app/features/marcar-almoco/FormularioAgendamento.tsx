@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   BookingConflictError,
   Dupla,
-  DUPLAS_CONFIG,
+  DuplaInfo,
   NovoAgendamentoPayload,
 } from "@/app/types/agendamento";
 import { formatarTituloDia } from "@/app/utils/date";
@@ -14,6 +14,7 @@ interface FormularioAgendamentoProps {
   data: Date;
   duplasDisponiveis: Dupla[];
   duplasDesabilitadas: Dupla[];
+  duplas: DuplaInfo[];
   onVoltar: () => void;
   onSucesso: () => void;
   /** Chamado ao receber conflito: o pai deve recarregar dados e voltar à grade */
@@ -24,6 +25,7 @@ export default function FormularioAgendamento({
   data,
   duplasDisponiveis,
   duplasDesabilitadas,
+  duplas,
   onVoltar,
   onSucesso,
   onConflito,
@@ -160,7 +162,7 @@ export default function FormularioAgendamento({
             </div>
 
             <div className="flex flex-col gap-2.5 pt-1">
-              {DUPLAS_CONFIG.map((conf) => {
+              {duplas.map((conf) => {
                 const isDesabilitada = duplasDesabilitadas.includes(conf.id);
                 const isDisponivel = duplasDisponiveis.includes(conf.id);
                 const isSelected = duplasSelecionadas.includes(conf.id);
@@ -412,7 +414,7 @@ export default function FormularioAgendamento({
                 <>
                   O agendamento para{" "}
                   <strong className="font-semibold text-gray-900">
-                    {DUPLAS_CONFIG.find((c) => c.id === conflitoDuplas[0])?.label}
+                    {duplas.find((c) => c.id === conflitoDuplas[0])?.label}
                   </strong>{" "}
                   acabou de ser preenchido por outra pessoa ou ficou indisponível nesta data.
                 </>
@@ -421,7 +423,7 @@ export default function FormularioAgendamento({
                   Os agendamentos para{" "}
                   <strong className="font-semibold text-gray-900">
                     {conflitoDuplas
-                      .map((id) => DUPLAS_CONFIG.find((c) => c.id === id)?.label)
+                      .map((id) => duplas.find((c) => c.id === id)?.label)
                       .join(" e ")}
                   </strong>{" "}
                   acabaram de ser preenchidos por outra pessoa ou ficaram indisponíveis nesta data.

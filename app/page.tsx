@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/app/components/Header";
+import { useAdmin } from "@/app/context/AdminContext";
 import ActionCard from "@/app/components/ActionCard";
 import MarcarAlmoco from "@/app/features/marcar-almoco";
 import VisualizarAlmocos from "@/app/features/visualizar-almoco";
@@ -11,6 +13,8 @@ type View = "home" | "marcar" | "visualizar" | "bloquear";
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<View>("home");
+  const { isAdmin } = useAdmin();
+  const router = useRouter();
 
   if (currentView === "marcar") {
     return <MarcarAlmoco onVoltar={() => setCurrentView("home")} />;
@@ -20,7 +24,7 @@ export default function Home() {
     return <VisualizarAlmocos onVoltar={() => setCurrentView("home")} />;
   }
 
-  if (currentView === "bloquear") {
+  if (currentView === "bloquear" && isAdmin) {
     return <BloquearDatas onVoltar={() => setCurrentView("home")} />;
   }
 
@@ -60,13 +64,23 @@ export default function Home() {
               onClick={() => setCurrentView("visualizar")}
             />
 
-            {process.env.NODE_ENV === "development" && (
+            {isAdmin && (
               <ActionCard
                 icon="🚫"
                 title="BLOQUEAR DATAS"
                 description="Desabilitar dias na escala (Acesso Admin)"
                 variant="outlined"
                 onClick={() => setCurrentView("bloquear")}
+              />
+            )}
+
+            {isAdmin && (
+              <ActionCard
+                icon="👥"
+                title="EDITAR DUPLAS"
+                description="Adicionar, editar ou remover duplas de missionários"
+                variant="outlined"
+                onClick={() => router.push("/editar-duplas")}
               />
             )}
           </div>

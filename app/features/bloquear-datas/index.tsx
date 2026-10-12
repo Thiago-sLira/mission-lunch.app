@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, useMemo } from "react";
 import {
   Agendamento,
-  DUPLAS_CONFIG,
   Dupla,
+  Missionario,
+  DuplaInfo,
   isDataDesabilitada,
+  agruparDuplas,
 } from "@/app/types/agendamento";
 import { getAgendamentos } from "@/app/services/agendamentos";
+import { getMissionarios } from "@/app/services/missionarios";
 import {
   formatarDataISO,
   formatarTituloDia,
@@ -32,6 +35,7 @@ export default function BloquearDatas({ onVoltar }: BloquearDatasProps) {
   const [mes, setMes] = useState(mesAtual);
 
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [missionarios, setMissionarios] = useState<Missionario[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -41,13 +45,16 @@ export default function BloquearDatas({ onVoltar }: BloquearDatasProps) {
 
   const [, startTransition] = useTransition();
 
+  const duplas: DuplaInfo[] = useMemo(() => agruparDuplas(missionarios), [missionarios]);
+
   const carregarDados = () => {
     setCarregando(true);
     setErro(null);
-    getAgendamentos()
-      .then((data) => {
+    return Promise.all([getAgendamentos(), getMissionarios()])
+      .then(([agendamentosData, missionariosData]) => {
         startTransition(() => {
-          setAgendamentos(data);
+          setAgendamentos(agendamentosData);
+          setMissionarios(missionariosData);
           setCarregando(false);
         });
       })
@@ -59,7 +66,9 @@ export default function BloquearDatas({ onVoltar }: BloquearDatasProps) {
   };
 
   useEffect(() => {
-    carregarDados();
+    (async () => {
+      await carregarDados();
+    })();
   }, []);
 
   const isMesAtual = ano === anoAtual && mes === mesAtual;
@@ -110,6 +119,7 @@ export default function BloquearDatas({ onVoltar }: BloquearDatasProps) {
         data={diaSelecionado}
         duplasDisponiveis={duplasDisponiveisParaDia}
         duplasOcupadas={duplasOcupadasParaDia}
+        duplas={duplas}
         onVoltar={() => setDiaSelecionado(null)}
         onSucesso={handleSucessoBloqueio}
         onConflito={handleConflitoBloqueio}
@@ -263,7 +273,7 @@ export default function BloquearDatas({ onVoltar }: BloquearDatasProps) {
               const duplasLivres: Dupla[] = [];
               const duplasOcupadas: Dupla[] = [];
 
-              DUPLAS_CONFIG.forEach((conf) => {
+              duplas.forEach((conf) => {
                 const registro = registrosDoDia.find((a) => a.dupla === conf.id);
                 if (registro) {
                   // Qualquer registro existente (agendado ou bloqueado) = ocupada
@@ -273,7 +283,7 @@ export default function BloquearDatas({ onVoltar }: BloquearDatasProps) {
                 }
               });
 
-              const todasOcupadas = duplasLivres.length === 0;
+              const todasOcupadas = duplas.length > 0 && duplasLivres.length === 0;
 
               return (
                 <div
@@ -291,7 +301,7 @@ export default function BloquearDatas({ onVoltar }: BloquearDatasProps) {
 
                   {/* Badges de Status das Duplas */}
                   <div className="flex flex-wrap gap-2">
-                    {DUPLAS_CONFIG.map((conf) => {
+                    {duplas.map((conf) => {
                       const isLivre = duplasLivres.includes(conf.id);
                       const registro = registrosDoDia.find((a) => a.dupla === conf.id);
                       const isBloqueada = registro

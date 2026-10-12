@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { Agendamento, DUPLAS_CONFIG, Dupla, isDataDesabilitada } from "@/app/types/agendamento";
+import { useEffect, useState, useTransition, useMemo } from "react";
+import {
+  Agendamento,
+  Dupla,
+  Missionario,
+  DuplaInfo,
+  isDataDesabilitada,
+  agruparDuplas,
+} from "@/app/types/agendamento";
 import { getAgendamentos } from "@/app/services/agendamentos";
+import { getMissionarios } from "@/app/services/missionarios";
 import {
   formatarDataISO,
   formatarTituloDia,
@@ -28,6 +36,7 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
   const [mes, setMes] = useState(mesAtual);
 
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [missionarios, setMissionarios] = useState<Missionario[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -39,13 +48,16 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
 
   const [, startTransition] = useTransition();
 
+  const duplas: DuplaInfo[] = useMemo(() => agruparDuplas(missionarios), [missionarios]);
+
   const carregarDados = () => {
     setCarregando(true);
     setErro(null);
-    getAgendamentos()
-      .then((data) => {
+    return Promise.all([getAgendamentos(), getMissionarios()])
+      .then(([agendamentosData, missionariosData]) => {
         startTransition(() => {
-          setAgendamentos(data);
+          setAgendamentos(agendamentosData);
+          setMissionarios(missionariosData);
           setCarregando(false);
         });
       })
@@ -56,9 +68,11 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
       });
   };
 
-  useEffect(() => {
-    carregarDados();
-  }, []);
+ useEffect(() => {
+   (async () => {
+     await carregarDados();
+   })();
+ }, []);
 
   const isMesAtual = ano === anoAtual && mes === mesAtual;
   const isMesSeguinte = ano === anoSeguinte && mes === mesSeguinte;
@@ -110,6 +124,7 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
         data={diaSelecionado}
         duplasDisponiveis={duplasDisponiveisParaDia}
         duplasDesabilitadas={duplasDesabilitadasParaDia}
+        duplas={duplas}
         onVoltar={() => setDiaSelecionado(null)}
         onSucesso={handleSucessoAgendamento}
         onConflito={handleConflitoAgendamento}
@@ -309,7 +324,7 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
               const duplasAgendadas: Dupla[] = [];
               const duplasDesabilitadas: Dupla[] = [];
 
-              DUPLAS_CONFIG.forEach((conf) => {
+              duplas.forEach((conf) => {
                 const registro = registrosDoDia.find((a) => a.dupla === conf.id);
                 if (registro) {
                   if (isDataDesabilitada(registro.data_desabilitada)) {
@@ -326,8 +341,8 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
                 }
               });
 
-              // Caso todas as 3 duplas estejam com data_desabilitada
-              const todasDesabilitadas = duplasDesabilitadas.length === DUPLAS_CONFIG.length;
+              // Caso todas as duplas estejam com data_desabilitada
+              const todasDesabilitadas = duplas.length > 0 && duplasDesabilitadas.length === duplas.length;
 
               if (todasDesabilitadas) {
                 return (
@@ -363,7 +378,7 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
 
                   {/* Badges de Status das Duplas */}
                   <div className="flex flex-wrap gap-2">
-                    {DUPLAS_CONFIG.map((conf) => {
+                    {duplas.map((conf) => {
                       const isLivre = duplasLivres.includes(conf.id);
 
                       return (

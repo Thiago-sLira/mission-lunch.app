@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   BookingConflictError,
   Dupla,
-  DUPLAS_CONFIG,
+  DuplaInfo,
   NovoAgendamentoPayload,
 } from "@/app/types/agendamento";
 import { formatarTituloDia } from "@/app/utils/date";
@@ -14,6 +14,7 @@ interface FormularioBloqueioProps {
   data: Date;
   duplasDisponiveis: Dupla[];
   duplasOcupadas: Dupla[];
+  duplas: DuplaInfo[];
   onVoltar: () => void;
   onSucesso: () => void;
   onConflito: () => void;
@@ -23,6 +24,7 @@ export default function FormularioBloqueio({
   data,
   duplasDisponiveis,
   duplasOcupadas,
+  duplas,
   onVoltar,
   onSucesso,
   onConflito,
@@ -141,7 +143,7 @@ export default function FormularioBloqueio({
             </div>
 
             <div className="flex flex-col gap-2.5 pt-1">
-              {DUPLAS_CONFIG.map((conf) => {
+              {duplas.map((conf) => {
                 const isOcupada = duplasOcupadas.includes(conf.id);
                 const isDisponivel = duplasDisponiveis.includes(conf.id);
                 const isSelected = duplasSelecionadas.includes(conf.id);

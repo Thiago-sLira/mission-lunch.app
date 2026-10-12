@@ -6,7 +6,7 @@ import {
 } from "@/app/types/agendamento";
 
 export async function getAgendamentos(): Promise<Agendamento[]> {
-  const res = await fetch("/api/agendamentos", {
+  const res = await fetch("/api/agendamentos?action=agendamentos", {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -34,10 +34,13 @@ export async function criarAgendamentos(
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ action: "agendar", data: payload }),
   });
 
   if (!res.ok) {
+    if (res.status === 401) {
+      throw new Error("Sessão de administrador expirada. Faça login novamente.");
+    }
     const errorData = await res.json().catch(() => ({}));
     throw new Error(errorData.error || "Erro ao registrar agendamentos.");
   }

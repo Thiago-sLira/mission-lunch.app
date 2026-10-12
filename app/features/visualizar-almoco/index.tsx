@@ -1,8 +1,15 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { Agendamento, DUPLAS_CONFIG, isDataDesabilitada } from "@/app/types/agendamento";
+import { useEffect, useState, useTransition, useMemo } from "react";
+import {
+  Agendamento,
+  Missionario,
+  DuplaInfo,
+  isDataDesabilitada,
+  agruparDuplas,
+} from "@/app/types/agendamento";
 import { getAgendamentos } from "@/app/services/agendamentos";
+import { getMissionarios } from "@/app/services/missionarios";
 import {
   formatarDataISO,
   formatarTituloDia,
@@ -26,9 +33,12 @@ export default function VisualizarAlmocos({ onVoltar }: VisualizarAlmocosProps) 
   const [mes, setMes] = useState(mesAtual);
 
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [missionarios, setMissionarios] = useState<Missionario[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+
+  const duplas: DuplaInfo[] = useMemo(() => agruparDuplas(missionarios), [missionarios]);
 
   const isMesAtual = ano === anoAtual && mes === mesAtual;
   const isMesSeguinte = ano === anoSeguinte && mes === mesSeguinte;
@@ -48,10 +58,11 @@ export default function VisualizarAlmocos({ onVoltar }: VisualizarAlmocosProps) 
   const carregarDados = () => {
     setCarregando(true);
     setErro(null);
-    getAgendamentos()
-      .then((data) => {
+    return Promise.all([getAgendamentos(), getMissionarios()])
+      .then(([agendamentosData, missionariosData]) => {
         startTransition(() => {
-          setAgendamentos(data);
+          setAgendamentos(agendamentosData);
+          setMissionarios(missionariosData);
           setCarregando(false);
         });
       })
@@ -63,7 +74,9 @@ export default function VisualizarAlmocos({ onVoltar }: VisualizarAlmocosProps) 
   };
 
   useEffect(() => {
-    carregarDados();
+    (async () => {
+      await carregarDados();
+    })();
   }, []);
 
   // Dias a exibir: no mês atual, apenas a partir de hoje; no mês seguinte, todos
@@ -209,12 +222,12 @@ export default function VisualizarAlmocos({ onVoltar }: VisualizarAlmocosProps) 
               );
 
               // Checar se todas as duplas do dia estão com data_desabilitada
-              const duplasDesabilitadasDoDia = DUPLAS_CONFIG.filter((conf) => {
+              const duplasDesabilitadasDoDia = duplas.filter((conf) => {
                 const a = agendamentosDoDia.find((item) => item.dupla === conf.id);
                 return a && isDataDesabilitada(a.data_desabilitada);
               });
 
-              if (duplasDesabilitadasDoDia.length === DUPLAS_CONFIG.length) {
+              if (duplas.length > 0 && duplasDesabilitadasDoDia.length === duplas.length) {
                 return (
                   <div
                     key={diaISO}
@@ -259,7 +272,7 @@ export default function VisualizarAlmocos({ onVoltar }: VisualizarAlmocosProps) 
 
                   {/* Lista de Duplas */}
                   <div className="p-4 flex flex-col gap-3">
-                    {DUPLAS_CONFIG.map((config) => {
+                    {duplas.map((config) => {
                       const agendamento = agendamentosDoDia.find(
                         (a) => a.dupla === config.id
                       );
