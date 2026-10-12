@@ -18,6 +18,8 @@ export interface DuplaInfo {
   numero: number;
   nomes: string[];
   label: string;
+  /** Nomes para exibição, ex: "Élder Ryan e Élder Hidalgo" (fallback: label) */
+  nomesExibicao: string;
   shortLabel: string;
   badgeBg: string;
   badgeText: string;
@@ -175,9 +177,22 @@ export function agruparDuplas(missionarios: Missionario[]): DuplaInfo[] {
       numero: entrada.numero,
       nomes: entrada.nomes,
       label,
+      nomesExibicao: formatarNomesDupla(entrada.tipo, entrada.nomes) || label,
       shortLabel: label,
       badgeBg: badge.badgeBg,
       badgeText: badge.badgeText,
     };
   });
+}
+
+/**
+ * Monta a lista de nomes com o título do missionário.
+ * ["Ryan", "Hidalgo"] → "Élder Ryan e Élder Hidalgo"
+ * ["Gillet", "Castro", "Silva"] → "Sister Gillet, Sister Castro e Sister Silva"
+ */
+export function formatarNomesDupla(tipo: TipoMissionario, nomes: string[]): string {
+  const titulo = tipo === "ELDER" ? "Élder" : "Sister";
+  const comTitulo = nomes.map((nome) => `${titulo} ${nome}`);
+  if (comTitulo.length <= 1) return comTitulo.join("");
+  return `${comTitulo.slice(0, -1).join(", ")} e ${comTitulo[comTitulo.length - 1]}`;
 }

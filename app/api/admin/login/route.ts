@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import {
   ADMIN_COOKIE_NAME,
-  SESSION_MAX_AGE_SECONDS,
   credenciaisValidas,
   criarTokenSessao,
 } from "@/app/lib/adminSession";
@@ -47,12 +46,13 @@ export async function POST(request: Request) {
   }
 
   const response = NextResponse.json({ ok: true });
+  // Cookie de sessão (sem maxAge/expires): o navegador descarta ao ser fechado.
+  // O token assinado ainda expira no servidor após SESSION_MAX_AGE_SECONDS.
   response.cookies.set(ADMIN_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     path: "/",
-    maxAge: SESSION_MAX_AGE_SECONDS,
   });
 
   return response;

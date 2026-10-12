@@ -6,9 +6,10 @@ import {
   Dupla,
   Missionario,
   DuplaInfo,
-  isDataDesabilitada,
   agruparDuplas,
 } from "@/app/types/agendamento";
+import DuplaPill from "@/app/components/DuplaPill";
+import LogoutButton from "@/app/components/LogoutButton";
 import { getAgendamentos } from "@/app/services/agendamentos";
 import { getMissionarios } from "@/app/services/missionarios";
 import {
@@ -41,7 +42,6 @@ export default function BloquearDatas({ onVoltar }: BloquearDatasProps) {
 
   const [diaSelecionado, setDiaSelecionado] = useState<Date | null>(null);
   const [duplasDisponiveisParaDia, setDuplasDisponiveisParaDia] = useState<Dupla[]>([]);
-  const [duplasOcupadasParaDia, setDuplasOcupadasParaDia] = useState<Dupla[]>([]);
 
   const [, startTransition] = useTransition();
 
@@ -96,11 +96,10 @@ export default function BloquearDatas({ onVoltar }: BloquearDatasProps) {
   });
   const mesNome = MESES[mes];
 
-  const handleAbrirBloqueio = (dia: Date, livres: Dupla[], ocupadas: Dupla[]) => {
+  const handleAbrirBloqueio = (dia: Date, livres: Dupla[]) => {
     window.scrollTo({ top: 0, behavior: "instant" });
     setDiaSelecionado(dia);
     setDuplasDisponiveisParaDia(livres);
-    setDuplasOcupadasParaDia(ocupadas);
   };
 
   const handleSucessoBloqueio = () => {
@@ -118,7 +117,6 @@ export default function BloquearDatas({ onVoltar }: BloquearDatasProps) {
       <FormularioBloqueio
         data={diaSelecionado}
         duplasDisponiveis={duplasDisponiveisParaDia}
-        duplasOcupadas={duplasOcupadasParaDia}
         duplas={duplas}
         onVoltar={() => setDiaSelecionado(null)}
         onSucesso={handleSucessoBloqueio}
@@ -153,18 +151,10 @@ export default function BloquearDatas({ onVoltar }: BloquearDatasProps) {
           </svg>
         </button>
         <h1 className="text-xl font-bold text-white tracking-wide">
-          🚫 Bloquear Datas
+          🚫 Editar Datas
         </h1>
-        <div className="w-10" />
+        <LogoutButton onSair={onVoltar} />
       </header>
-
-      {/* Aviso Admin */}
-      <div className="w-full max-w-md mx-auto px-4 pt-4">
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 flex items-center gap-2 text-red-800 text-xs font-semibold">
-          <span>⚠️</span>
-          <span>Acesso administrativo — apenas em desenvolvimento</span>
-        </div>
-      </div>
 
       {/* Conteúdo Principal */}
       <main className="flex-1 w-full max-w-md mx-auto px-4 py-4 flex flex-col gap-4">
@@ -270,18 +260,10 @@ export default function BloquearDatas({ onVoltar }: BloquearDatasProps) {
                 (a) => a.data && a.data.startsWith(diaISO)
               );
 
-              const duplasLivres: Dupla[] = [];
-              const duplasOcupadas: Dupla[] = [];
-
-              duplas.forEach((conf) => {
-                const registro = registrosDoDia.find((a) => a.dupla === conf.id);
-                if (registro) {
-                  // Qualquer registro existente (agendado ou bloqueado) = ocupada
-                  duplasOcupadas.push(conf.id);
-                } else {
-                  duplasLivres.push(conf.id);
-                }
-              });
+              // Qualquer registro existente (agendado ou bloqueado) = indisponível
+              const duplasLivres: Dupla[] = duplas
+                .filter((conf) => !registrosDoDia.some((a) => a.dupla === conf.id))
+                .map((conf) => conf.id);
 
               const todasOcupadas = duplas.length > 0 && duplasLivres.length === 0;
 
@@ -299,37 +281,15 @@ export default function BloquearDatas({ onVoltar }: BloquearDatasProps) {
                     {diaSemana}, {diaEMes}
                   </div>
 
-                  {/* Badges de Status das Duplas */}
+                  {/* Pills com os nomes das duplas */}
                   <div className="flex flex-wrap gap-2">
-                    {duplas.map((conf) => {
-                      const isLivre = duplasLivres.includes(conf.id);
-                      const registro = registrosDoDia.find((a) => a.dupla === conf.id);
-                      const isBloqueada = registro
-                        ? isDataDesabilitada(registro.data_desabilitada)
-                        : false;
-
-                      if (!isLivre) {
-                        return (
-                          <span
-                            key={conf.id}
-                            className="text-xs px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 bg-gray-100 text-gray-400 border border-gray-200"
-                          >
-                            <span>{conf.shortLabel}</span>
-                            <span>{isBloqueada ? "Bloqueada" : "Agendada"}</span>
-                          </span>
-                        );
-                      }
-
-                      return (
-                        <span
-                          key={conf.id}
-                          className={`text-xs px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 border ${conf.badgeBg} ${conf.badgeText} border-transparent`}
-                        >
-                          <span>{conf.shortLabel}</span>
-                          <span>Livre</span>
-                        </span>
-                      );
-                    })}
+                    {duplas.map((conf) => (
+                      <DuplaPill
+                        key={conf.id}
+                        texto={conf.nomesExibicao}
+                        livre={duplasLivres.includes(conf.id)}
+                      />
+                    ))}
                   </div>
 
                   {/* Botão de Bloqueio */}
@@ -342,10 +302,10 @@ export default function BloquearDatas({ onVoltar }: BloquearDatasProps) {
                     </button>
                   ) : (
                     <button
-                      onClick={() => handleAbrirBloqueio(dia, duplasLivres, duplasOcupadas)}
-                      className="w-full py-3 bg-red-700 hover:bg-red-800 text-white rounded-xl font-bold text-sm tracking-wide transition-colors cursor-pointer shadow-xs active:scale-[0.99]"
+                      onClick={() => handleAbrirBloqueio(dia, duplasLivres)}
+                      className="w-full py-3 bg-[#1B2A6B] hover:bg-[#152154] text-white rounded-xl font-bold text-sm tracking-wide transition-colors cursor-pointer shadow-xs active:scale-[0.99]"
                     >
-                      Bloquear duplas neste dia
+                      Editar datas para esse dia
                     </button>
                   )}
                 </div>

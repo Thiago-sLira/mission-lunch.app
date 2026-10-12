@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/app/components/Header";
 import { useAdmin } from "@/app/context/AdminContext";
@@ -15,6 +15,11 @@ export default function Home() {
   const [currentView, setCurrentView] = useState<View>("home");
   const { isAdmin } = useAdmin();
   const router = useRouter();
+
+  // As telas da Home trocam por estado (não por rota): sempre iniciar no topo
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [currentView]);
 
   if (currentView === "marcar") {
     return <MarcarAlmoco onVoltar={() => setCurrentView("home")} />;
@@ -67,7 +72,7 @@ export default function Home() {
             {isAdmin && (
               <ActionCard
                 icon="🚫"
-                title="BLOQUEAR DATAS"
+                title="EDITAR DATAS"
                 description="Desabilitar dias na escala (Acesso Admin)"
                 variant="outlined"
                 onClick={() => setCurrentView("bloquear")}

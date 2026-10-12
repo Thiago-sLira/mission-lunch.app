@@ -13,7 +13,6 @@ import { criarAgendamentos } from "@/app/services/agendamentos";
 interface FormularioAgendamentoProps {
   data: Date;
   duplasDisponiveis: Dupla[];
-  duplasDesabilitadas: Dupla[];
   duplas: DuplaInfo[];
   onVoltar: () => void;
   onSucesso: () => void;
@@ -24,7 +23,6 @@ interface FormularioAgendamentoProps {
 export default function FormularioAgendamento({
   data,
   duplasDisponiveis,
-  duplasDesabilitadas,
   duplas,
   onVoltar,
   onSucesso,
@@ -163,15 +161,10 @@ export default function FormularioAgendamento({
 
             <div className="flex flex-col gap-2.5 pt-1">
               {duplas.map((conf) => {
-                const isDesabilitada = duplasDesabilitadas.includes(conf.id);
                 const isDisponivel = duplasDisponiveis.includes(conf.id);
                 const isSelected = duplasSelecionadas.includes(conf.id);
 
                 if (!isDisponivel) {
-                  const legenda = isDesabilitada
-                    ? "Indisponível"
-                    : "Já agendado";
-
                   return (
                     <div
                       key={conf.id}
@@ -184,7 +177,7 @@ export default function FormularioAgendamento({
                         className="w-5 h-5 rounded border-gray-300"
                       />
                       <span className="font-semibold text-sm">
-                        {conf.label} ({legenda})
+                        {conf.nomesExibicao}
                       </span>
                     </div>
                   );
@@ -226,7 +219,7 @@ export default function FormularioAgendamento({
                       )}
                     </div>
                     <span className="font-bold text-sm text-gray-900">
-                      {conf.label}
+                      {conf.nomesExibicao} - Livre
                     </span>
                   </label>
                 );

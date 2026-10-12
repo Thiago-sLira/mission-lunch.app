@@ -18,6 +18,7 @@ import {
   MESES,
 } from "@/app/utils/date";
 import FormularioAgendamento from "./FormularioAgendamento";
+import DuplaPill from "@/app/components/DuplaPill";
 
 interface MarcarAlmocoProps {
   onVoltar?: () => void;
@@ -43,7 +44,6 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
   // Sub-fluxo: Dia selecionado para preencher o formulário
   const [diaSelecionado, setDiaSelecionado] = useState<Date | null>(null);
   const [duplasDisponiveisParaDia, setDuplasDisponiveisParaDia] = useState<Dupla[]>([]);
-  const [duplasDesabilitadasParaDia, setDuplasDesabilitadasParaDia] = useState<Dupla[]>([]);
   const [sucesso, setSucesso] = useState(false);
 
   const [, startTransition] = useTransition();
@@ -99,11 +99,10 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
   });
   const mesNome = MESES[mes];
 
-  const handleAbrirAgendamento = (dia: Date, disponiveis: Dupla[], desabilitadas: Dupla[]) => {
+  const handleAbrirAgendamento = (dia: Date, disponiveis: Dupla[]) => {
     window.scrollTo({ top: 0, behavior: "instant" });
     setDiaSelecionado(dia);
     setDuplasDisponiveisParaDia(disponiveis);
-    setDuplasDesabilitadasParaDia(desabilitadas);
   };
 
   const handleSucessoAgendamento = () => {
@@ -123,7 +122,6 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
       <FormularioAgendamento
         data={diaSelecionado}
         duplasDisponiveis={duplasDisponiveisParaDia}
-        duplasDesabilitadas={duplasDesabilitadasParaDia}
         duplas={duplas}
         onVoltar={() => setDiaSelecionado(null)}
         onSucesso={handleSucessoAgendamento}
@@ -376,25 +374,15 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
                     {diaSemana}, {diaEMes}
                   </div>
 
-                  {/* Badges de Status das Duplas */}
+                  {/* Pills com os nomes das duplas */}
                   <div className="flex flex-wrap gap-2">
-                    {duplas.map((conf) => {
-                      const isLivre = duplasLivres.includes(conf.id);
-
-                      return (
-                        <span
-                          key={conf.id}
-                          className={`text-xs px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 ${
-                            isLivre
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
-                              : "bg-gray-100 text-gray-400 border border-gray-200"
-                          }`}
-                        >
-                          <span>{conf.shortLabel}</span>
-                          {isLivre && <span>Livre</span>}
-                        </span>
-                      );
-                    })}
+                    {duplas.map((conf) => (
+                      <DuplaPill
+                        key={conf.id}
+                        texto={conf.nomesExibicao}
+                        livre={duplasLivres.includes(conf.id)}
+                      />
+                    ))}
                   </div>
 
                   {/* Botão de Agendamento */}
@@ -408,7 +396,7 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
                   ) : (
                     <button
                       onClick={() =>
-                        handleAbrirAgendamento(dia, duplasLivres, duplasDesabilitadas)
+                        handleAbrirAgendamento(dia, duplasLivres)
                       }
                       className="w-full py-3 bg-[#1B2A6B] hover:bg-[#152154] text-white rounded-xl font-bold text-sm tracking-wide transition-colors cursor-pointer shadow-xs active:scale-[0.99]"
                     >
