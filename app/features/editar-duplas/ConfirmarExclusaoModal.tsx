@@ -83,6 +83,7 @@ export default function ConfirmarExclusaoModal({
         </div>
 
         <p className="text-sm font-bold text-gray-900">{dupla.label}</p>
+        <p className="text-sm text-gray-600 -mt-3">{dupla.nomesExibicao}</p>
 
         <p id="msg-excluir-dupla" className="text-sm text-gray-700 leading-relaxed">
           Atenção: Ao remover esta dupla, TODOS os almoços já agendados para ela serão apagados permanentemente. Tem certeza que deseja excluir?

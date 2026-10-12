@@ -96,7 +96,12 @@ export async function GET(request: Request) {
 // POST /api/agendamentos  { action, ... }
 // ---------------------------------------------------------------------------
 
-const POST_ALLOWLIST = new Set(["agendar", "salvar_dupla", "excluir_dupla"]);
+const POST_ALLOWLIST = new Set([
+  "agendar",
+  "salvar_dupla",
+  "excluir_dupla",
+  "excluir_agendamento",
+]);
 
 export async function POST(request: Request) {
   if (!GOOGLE_SCRIPT_URL) {
@@ -151,9 +156,19 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
-      if (!isNonEmptyString(nome_familia) || (nome_familia as string).length > 120) {
+      // Bloqueios (data_desabilitada) não têm família: nome_familia pode ser vazio.
+      // Agendamentos normais continuam exigindo nome_familia não vazio.
+      const isBloqueio = isDataDesabilitada(data_desabilitada as boolean | string | undefined);
+      const nomeValido = isBloqueio
+        ? typeof nome_familia === "string" && nome_familia.length <= 120
+        : isNonEmptyString(nome_familia) && nome_familia.length <= 120;
+      if (!nomeValido) {
         return NextResponse.json(
-          { error: `Item ${i}: 'nome_familia' inválido (máx. 120 caracteres).` },
+          {
+            error: isBloqueio
+              ? `Item ${i}: 'nome_familia' inválido (máx. 120 caracteres).`
+              : `Item ${i}: 'nome_familia' é obrigatório (máx. 120 caracteres).`,
+          },
           { status: 400 }
         );
       }
@@ -165,7 +180,7 @@ export async function POST(request: Request) {
           );
         }
       }
-      itens.push({ data: dataItem, dupla, nome_familia, observacao: observacao as string | undefined, data_desabilitada: data_desabilitada as boolean | string | undefined });
+      itens.push({ data: dataItem, dupla, nome_familia: nome_familia as string, observacao: observacao as string | undefined, data_desabilitada: data_desabilitada as boolean | string | undefined });
     }
 
     // Admin check for blocked dates
@@ -222,6 +237,25 @@ export async function POST(request: Request) {
     }
 
     forwardPayload = { action, numero_dupla: numero, tipo, nomes: nomesTrimados };
+
+  } else if (action === "excluir_agendamento") {
+    const ok = await isAdminRequest();
+    if (!ok) {
+      return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+    }
+
+    const { data, dupla } = body;
+    if (typeof data !== "string" || !DATA_RE.test(data)) {
+      return NextResponse.json(
+        { error: "'data' deve estar no formato YYYY-MM-DD." },
+        { status: 400 }
+      );
+    }
+    if (typeof dupla !== "string" || !DUPLA_RE.test(dupla)) {
+      return NextResponse.json({ error: "'dupla' inválida." }, { status: 400 });
+    }
+
+    forwardPayload = { action, data, dupla };
 
   } else {
     // excluir_dupla

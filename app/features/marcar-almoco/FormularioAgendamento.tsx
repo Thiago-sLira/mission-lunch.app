@@ -219,7 +219,7 @@ export default function FormularioAgendamento({
                       )}
                     </div>
                     <span className="font-bold text-sm text-gray-900">
-                      {conf.nomesExibicao} - Livre
+                      {conf.nomesExibicao}
                     </span>
                   </label>
                 );
@@ -240,8 +240,10 @@ export default function FormularioAgendamento({
               </label>
               <input
                 id="nome_familia"
+                name="nome_familia"
                 type="text"
                 required
+                autoComplete="off"
                 value={nomeFamilia}
                 onChange={(e) => {
                   setNomeFamilia(e.target.value);
@@ -267,7 +269,9 @@ export default function FormularioAgendamento({
               </label>
               <input
                 id="observacao"
+                name="observacao"
                 type="text"
+                autoComplete="off"
                 value={observacao}
                 onChange={(e) => setObservacao(e.target.value)}
                 className="w-full px-3.5 py-3 rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B2A6B] focus:border-transparent text-sm"
@@ -407,7 +411,7 @@ export default function FormularioAgendamento({
                 <>
                   O agendamento para{" "}
                   <strong className="font-semibold text-gray-900">
-                    {duplas.find((c) => c.id === conflitoDuplas[0])?.label}
+                    {duplas.find((c) => c.id === conflitoDuplas[0])?.nomesExibicao}
                   </strong>{" "}
                   acabou de ser preenchido por outra pessoa ou ficou indisponível nesta data.
                 </>
@@ -416,7 +420,7 @@ export default function FormularioAgendamento({
                   Os agendamentos para{" "}
                   <strong className="font-semibold text-gray-900">
                     {conflitoDuplas
-                      .map((id) => duplas.find((c) => c.id === id)?.label)
+                      .map((id) => duplas.find((c) => c.id === id)?.nomesExibicao)
                       .join(" e ")}
                   </strong>{" "}
                   acabaram de ser preenchidos por outra pessoa ou ficaram indisponíveis nesta data.

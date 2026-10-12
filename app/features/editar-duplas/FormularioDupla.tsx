@@ -166,6 +166,7 @@ export default function FormularioDupla({
             <input
               id="dupla-numero"
               type="number"
+              autoComplete="off"
               min={1}
               max={999}
               step={1}
@@ -194,6 +195,7 @@ export default function FormularioDupla({
               <div key={index} className="flex items-center gap-2">
                 <input
                   type="text"
+                  autoComplete="off"
                   maxLength={80}
                   value={nome}
                   disabled={enviando}

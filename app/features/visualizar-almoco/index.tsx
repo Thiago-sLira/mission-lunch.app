@@ -287,11 +287,11 @@ export default function VisualizarAlmocos({ onVoltar }: VisualizarAlmocosProps) 
                       return (
                         <div
                           key={config.id}
-                          className="flex items-start gap-3 text-sm"
+                          className="flex flex-col items-start gap-1 text-sm"
                         >
-                          {/* Badge da Dupla */}
+                          {/* Badge da Dupla (nomes reais) */}
                           <span
-                            className={`px-2.5 py-1 rounded-md text-xs font-semibold shrink-0 min-w-[76px] text-center ${
+                            className={`px-2.5 py-1 rounded-md text-xs font-semibold ${
                               temAgendamento
                                 ? `${config.badgeBg} ${config.badgeText}`
                                 : isDesabilitada
@@ -299,11 +299,11 @@ export default function VisualizarAlmocos({ onVoltar }: VisualizarAlmocosProps) 
                                 : "bg-red-100/70 text-red-700"
                             }`}
                           >
-                            {config.shortLabel}
+                            {config.nomesExibicao}
                           </span>
 
                           {/* Conteúdo / Status */}
-                          <div className="flex-1 flex flex-col">
+                          <div className="flex flex-col pl-0.5">
                             {temAgendamento ? (
                               <>
                                 <span className="font-semibold text-gray-900 leading-snug">

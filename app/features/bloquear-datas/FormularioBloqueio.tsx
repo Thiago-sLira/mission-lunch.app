@@ -81,7 +81,11 @@ export default function FormularioBloqueio({
         setConflitoDuplas(err.conflitos);
       } else {
         console.error(err);
-        setErroEnvio("Ocorreu um erro ao registrar o bloqueio. Tente novamente.");
+        setErroEnvio(
+          err instanceof Error && err.message
+            ? err.message
+            : "Ocorreu um erro ao registrar o bloqueio. Tente novamente."
+        );
       }
     }
   };
@@ -201,7 +205,7 @@ export default function FormularioBloqueio({
                       )}
                     </div>
                     <span className="font-bold text-sm text-gray-900">
-                      {conf.nomesExibicao} - Livre
+                      {conf.nomesExibicao}
                     </span>
                   </label>
                 );
@@ -224,7 +228,9 @@ export default function FormularioBloqueio({
               </label>
               <input
                 id="observacao"
+                name="observacao"
                 type="text"
+                autoComplete="off"
                 value={observacao}
                 onChange={(e) => setObservacao(e.target.value)}
                 placeholder="Ex: P-Day, Conferência..."

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Header from "@/app/components/Header";
+import LogoutButton from "@/app/components/LogoutButton";
 import { useAdmin } from "@/app/context/AdminContext";
 import { ApiActionError, getMissionarios } from "@/app/services/missionarios";
 import { agruparDuplas, DuplaInfo, Missionario } from "@/app/types/agendamento";
@@ -58,12 +58,10 @@ export default function EditarDuplas() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#EEF2F7]">
-      <div className="sticky top-0 z-20 w-full shadow-sm">
-        <Header />
-        <div
-          className="w-full px-4 pb-3 flex items-center justify-between"
-          style={{ backgroundColor: "#1B2A6B" }}
-        >
+      <header
+        className="w-full py-4 px-4 flex items-center justify-between sticky top-0 z-20 shadow-sm"
+        style={{ backgroundColor: "#1B2A6B" }}
+      >
           <button
             onClick={() => router.push("/")}
             aria-label="Voltar"
@@ -82,12 +80,11 @@ export default function EditarDuplas() {
               />
             </svg>
           </button>
-          <h2 className="text-xl font-bold text-white tracking-wide">
-            Editar Duplas
-          </h2>
-          <div className="w-10" />
-        </div>
-      </div>
+          <h1 className="text-xl font-bold text-white tracking-wide">
+            👥 Editar Duplas
+          </h1>
+          <LogoutButton />
+      </header>
 
       <main className="flex-1 w-full max-w-md mx-auto px-4 py-4 flex flex-col gap-4">
         <button

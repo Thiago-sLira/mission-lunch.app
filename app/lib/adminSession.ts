@@ -6,7 +6,7 @@ import { createHash, createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 
 export const ADMIN_COOKIE_NAME = "admin_session";
-export const SESSION_MAX_AGE_SECONDS = 8 * 60 * 60;
+export const SESSION_MAX_AGE_SECONDS = 1 * 60 * 60;
 
 const MIN_SECRET_LENGTH = 32;
 
