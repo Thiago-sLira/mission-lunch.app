@@ -1,15 +1,8 @@
 "use client";
 
-import { useEffect, useState, useTransition, useMemo } from "react";
-import {
-  Agendamento,
-  Missionario,
-  DuplaInfo,
-  isDataDesabilitada,
-  agruparDuplas,
-} from "@/app/types/agendamento";
-import { getAgendamentos } from "@/app/services/agendamentos";
-import { getMissionarios } from "@/app/services/missionarios";
+import { useEffect, useState } from "react";
+import { isDataDesabilitada } from "@/app/types/agendamento";
+import { useDados } from "@/app/context/DadosContext";
 import {
   formatarDataISO,
   formatarTituloDia,
@@ -32,13 +25,12 @@ export default function VisualizarAlmocos({ onVoltar }: VisualizarAlmocosProps) 
   const [ano, setAno] = useState(anoAtual);
   const [mes, setMes] = useState(mesAtual);
 
-  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
-  const [missionarios, setMissionarios] = useState<Missionario[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
+  const { agendamentos, duplas, carregando, erro, refresh: carregarDados } = useDados();
 
-  const duplas: DuplaInfo[] = useMemo(() => agruparDuplas(missionarios), [missionarios]);
+  // Revalidação silenciosa em segundo plano ao abrir a tela
+  useEffect(() => {
+    void carregarDados();
+  }, [carregarDados]);
 
   const isMesAtual = ano === anoAtual && mes === mesAtual;
   const isMesSeguinte = ano === anoSeguinte && mes === mesSeguinte;
@@ -54,30 +46,6 @@ export default function VisualizarAlmocos({ onVoltar }: VisualizarAlmocosProps) 
     setAno(anoSeguinte);
     setMes(mesSeguinte);
   };
-
-  const carregarDados = () => {
-    setCarregando(true);
-    setErro(null);
-    return Promise.all([getAgendamentos(), getMissionarios()])
-      .then(([agendamentosData, missionariosData]) => {
-        startTransition(() => {
-          setAgendamentos(agendamentosData);
-          setMissionarios(missionariosData);
-          setCarregando(false);
-        });
-      })
-      .catch((err) => {
-        console.error(err);
-        setErro("Não foi possível carregar a escala de almoços.");
-        setCarregando(false);
-      });
-  };
-
-  useEffect(() => {
-    (async () => {
-      await carregarDados();
-    })();
-  }, []);
 
   // Dias a exibir: no mês atual, apenas a partir de hoje; no mês seguinte, todos
   const hojeClean = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());

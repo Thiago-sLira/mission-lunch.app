@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AdminProvider } from "@/app/context/AdminContext";
+import { DadosProvider } from "@/app/context/DadosContext";
 import ScrollToTop from "@/app/components/ScrollToTop";
 
 const geistSans = Geist({
@@ -32,7 +33,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <ScrollToTop />
-        <AdminProvider>{children}</AdminProvider>
+        <AdminProvider>
+          <DadosProvider>{children}</DadosProvider>
+        </AdminProvider>
       </body>
     </html>
   );

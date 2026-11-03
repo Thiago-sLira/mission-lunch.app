@@ -1,24 +1,18 @@
 "use client";
 
-import { useEffect, useState, useTransition, useMemo } from "react";
-import {
-  Agendamento,
-  Dupla,
-  Missionario,
-  DuplaInfo,
-  isDataDesabilitada,
-  agruparDuplas,
-} from "@/app/types/agendamento";
-import { getAgendamentos } from "@/app/services/agendamentos";
-import { getMissionarios } from "@/app/services/missionarios";
+import { useEffect, useState } from "react";
+import { Dupla } from "@/app/types/agendamento";
+import { useDados } from "@/app/context/DadosContext";
 import {
   formatarDataISO,
   formatarTituloDia,
   getDiasDoMes,
   MESES,
 } from "@/app/utils/date";
+import { calcularDisponibilidadeDia } from "@/app/utils/disponibilidade";
 import FormularioAgendamento from "./FormularioAgendamento";
 import DuplaPill from "@/app/components/DuplaPill";
+import LegendaDisponibilidade from "@/app/components/LegendaDisponibilidade";
 
 interface MarcarAlmocoProps {
   onVoltar?: () => void;
@@ -36,43 +30,17 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
   const [ano, setAno] = useState(anoAtual);
   const [mes, setMes] = useState(mesAtual);
 
-  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
-  const [missionarios, setMissionarios] = useState<Missionario[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
+  const { agendamentos, duplas, carregando, erro, refresh: carregarDados } = useDados();
 
   // Sub-fluxo: Dia selecionado para preencher o formulário
   const [diaSelecionado, setDiaSelecionado] = useState<Date | null>(null);
   const [duplasDisponiveisParaDia, setDuplasDisponiveisParaDia] = useState<Dupla[]>([]);
   const [sucesso, setSucesso] = useState(false);
 
-  const [, startTransition] = useTransition();
-
-  const duplas: DuplaInfo[] = useMemo(() => agruparDuplas(missionarios), [missionarios]);
-
-  const carregarDados = () => {
-    setCarregando(true);
-    setErro(null);
-    return Promise.all([getAgendamentos(), getMissionarios()])
-      .then(([agendamentosData, missionariosData]) => {
-        startTransition(() => {
-          setAgendamentos(agendamentosData);
-          setMissionarios(missionariosData);
-          setCarregando(false);
-        });
-      })
-      .catch((err) => {
-        console.error(err);
-        setErro("Não foi possível carregar a disponibilidade dos dias.");
-        setCarregando(false);
-      });
-  };
-
- useEffect(() => {
-   (async () => {
-     await carregarDados();
-   })();
- }, []);
+  // Revalidação silenciosa em segundo plano ao abrir a tela
+  useEffect(() => {
+    void carregarDados();
+  }, [carregarDados]);
 
   const isMesAtual = ano === anoAtual && mes === mesAtual;
   const isMesSeguinte = ano === anoSeguinte && mes === mesSeguinte;
@@ -260,14 +228,7 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
         </div>
 
         {/* Legenda */}
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-xs px-2.5 py-1 rounded-md font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200/60">
-            Disponível para agendamento
-          </span>
-          <span className="text-xs px-2.5 py-1 rounded-md font-semibold border bg-gray-100 text-gray-500 border-gray-200">
-            Almoço já agendado ou indisponível
-          </span>
-        </div>
+        <LegendaDisponibilidade textoIndisponivel="Almoço já agendado ou indisponível" />
 
         {/* Subtítulo */}
         <div className="pt-1">
@@ -312,35 +273,8 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
               const diaISO = formatarDataISO(dia);
               const { diaSemana, diaEMes } = formatarTituloDia(dia);
 
-              // Registros deste dia na planilha
-              const registrosDoDia = agendamentos.filter(
-                (a) => a.data && a.data.startsWith(diaISO)
-              );
-
-              // Identificar disponibilidade por dupla
-              const duplasLivres: Dupla[] = [];
-              const duplasAgendadas: Dupla[] = [];
-              const duplasDesabilitadas: Dupla[] = [];
-
-              duplas.forEach((conf) => {
-                const registro = registrosDoDia.find((a) => a.dupla === conf.id);
-                if (registro) {
-                  if (isDataDesabilitada(registro.data_desabilitada)) {
-                    duplasDesabilitadas.push(conf.id);
-                  } else if (registro.nome_familia && registro.nome_familia.trim().length > 0) {
-                    duplasAgendadas.push(conf.id);
-                  } else {
-                    // Registro existe mas sem nome e não desabilitado -> livre
-                    duplasLivres.push(conf.id);
-                  }
-                } else {
-                  // Sem nenhum registro -> livre
-                  duplasLivres.push(conf.id);
-                }
-              });
-
-              // Caso todas as duplas estejam com data_desabilitada
-              const todasDesabilitadas = duplas.length > 0 && duplasDesabilitadas.length === duplas.length;
+              const { duplasLivres, todasDesabilitadas, totalmenteOcupado } =
+                calcularDisponibilidadeDia(diaISO, agendamentos, duplas);
 
               if (todasDesabilitadas) {
                 return (
@@ -359,7 +293,6 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
                 );
               }
 
-              const totalmenteOcupado = duplasLivres.length === 0;
               const podeAgendar = !totalmenteOcupado;
 
               return (

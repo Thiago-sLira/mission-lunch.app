@@ -1,18 +1,13 @@
 "use client";
 
-import { useEffect, useState, useTransition, useMemo } from "react";
-import {
-  Agendamento,
-  Dupla,
-  Missionario,
-  DuplaInfo,
-  agruparDuplas,
-} from "@/app/types/agendamento";
+import { useEffect, useState } from "react";
+import { Dupla } from "@/app/types/agendamento";
 import DuplaPill from "@/app/components/DuplaPill";
 import LogoutButton from "@/app/components/LogoutButton";
 import { useAdmin } from "@/app/context/AdminContext";
-import { excluirAgendamento, getAgendamentos } from "@/app/services/agendamentos";
-import { ApiActionError, getMissionarios } from "@/app/services/missionarios";
+import { useDados } from "@/app/context/DadosContext";
+import { excluirAgendamento } from "@/app/services/agendamentos";
+import { ApiActionError } from "@/app/services/missionarios";
 import {
   formatarDataISO,
   formatarTituloDia,
@@ -36,10 +31,7 @@ export default function BloquearDatas({ onVoltar }: BloquearDatasProps) {
   const [ano, setAno] = useState(anoAtual);
   const [mes, setMes] = useState(mesAtual);
 
-  const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
-  const [missionarios, setMissionarios] = useState<Missionario[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
+  const { agendamentos, duplas, carregando, erro, refresh: carregarDados } = useDados();
 
   const [diaSelecionado, setDiaSelecionado] = useState<Date | null>(null);
   const [duplasDisponiveisParaDia, setDuplasDisponiveisParaDia] = useState<Dupla[]>([]);
@@ -49,33 +41,10 @@ export default function BloquearDatas({ onVoltar }: BloquearDatasProps) {
   const [erroLiberar, setErroLiberar] = useState<{ chave: string; mensagem: string } | null>(null);
   const { marcarSessaoExpirada } = useAdmin();
 
-  const [, startTransition] = useTransition();
-
-  const duplas: DuplaInfo[] = useMemo(() => agruparDuplas(missionarios), [missionarios]);
-
-  const carregarDados = () => {
-    setCarregando(true);
-    setErro(null);
-    return Promise.all([getAgendamentos(), getMissionarios()])
-      .then(([agendamentosData, missionariosData]) => {
-        startTransition(() => {
-          setAgendamentos(agendamentosData);
-          setMissionarios(missionariosData);
-          setCarregando(false);
-        });
-      })
-      .catch((err) => {
-        console.error(err);
-        setErro("Não foi possível carregar a disponibilidade dos dias.");
-        setCarregando(false);
-      });
-  };
-
+  // Revalidação silenciosa em segundo plano ao abrir a tela
   useEffect(() => {
-    (async () => {
-      await carregarDados();
-    })();
-  }, []);
+    void carregarDados();
+  }, [carregarDados]);
 
   const isMesAtual = ano === anoAtual && mes === mesAtual;
   const isMesSeguinte = ano === anoSeguinte && mes === mesSeguinte;

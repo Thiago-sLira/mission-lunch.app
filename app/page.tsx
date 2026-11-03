@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Header from "@/app/components/Header";
 import { useAdmin } from "@/app/context/AdminContext";
 import ActionCard from "@/app/components/ActionCard";
+import CalendarioMensal from "@/app/components/CalendarioMensal";
+import { useDados } from "@/app/context/DadosContext";
 import MarcarAlmoco from "@/app/features/marcar-almoco";
 import VisualizarAlmocos from "@/app/features/visualizar-almoco";
 import BloquearDatas from "@/app/features/bloquear-datas";
@@ -14,7 +16,13 @@ type View = "home" | "marcar" | "visualizar" | "bloquear";
 export default function Home() {
   const [currentView, setCurrentView] = useState<View>("home");
   const { isAdmin } = useAdmin();
+  const { refresh } = useDados();
   const router = useRouter();
+
+  // Ao (re)abrir a Home, revalida em segundo plano (ex.: volta de /editar-duplas)
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   // As telas da Home trocam por estado (não por rota): sempre iniciar no topo
   useEffect(() => {
@@ -68,6 +76,8 @@ export default function Home() {
               variant="outlined"
               onClick={() => setCurrentView("visualizar")}
             />
+
+            <CalendarioMensal onClick={() => setCurrentView("marcar")} />
 
             {isAdmin && (
               <ActionCard
