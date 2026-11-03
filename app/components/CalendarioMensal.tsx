@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useDados } from "@/app/context/DadosContext";
 import { formatarDataISO, getDiasDoMes, MESES } from "@/app/utils/date";
 import { calcularDisponibilidadeDia } from "@/app/utils/disponibilidade";
@@ -17,11 +17,15 @@ interface CalendarioMensalProps {
 
 export default function CalendarioMensal({ onClick }: CalendarioMensalProps) {
   const { agendamentos, duplas, carregando, erro } = useDados();
+  // 0 = mês atual, 1 = próximo mês
+  const [offset, setOffset] = useState<0 | 1>(0);
 
   const hoje = new Date();
-  const ano = hoje.getFullYear();
-  const mes = hoje.getMonth();
   const hojeISO = formatarDataISO(hoje);
+  const dataExibida = new Date(hoje.getFullYear(), hoje.getMonth() + offset, 1);
+  const ano = dataExibida.getFullYear();
+  const mes = dataExibida.getMonth();
+  const isMesAtual = offset === 0;
 
   const dias = useMemo(() => {
     const diasDoMes = getDiasDoMes(ano, mes);
@@ -39,7 +43,14 @@ export default function CalendarioMensal({ onClick }: CalendarioMensalProps) {
   // Células vazias antes do dia 1 (0 = domingo)
   const deslocamento = new Date(ano, mes, 1).getDay();
 
+  const navegar = (e: React.MouseEvent, novoOffset: 0 | 1) => {
+    e.stopPropagation();
+    setOffset(novoOffset);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // Ignora teclas vindas das setas internas
+    if (e.target !== e.currentTarget) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       onClick();
@@ -55,9 +66,61 @@ export default function CalendarioMensal({ onClick }: CalendarioMensalProps) {
       aria-label={`Calendário de ${MESES[mes]} ${ano}. Toque para agendar um almoço`}
       className="w-full min-w-0 bg-white rounded-2xl border border-gray-200/90 shadow-sm p-4 flex flex-col gap-3 cursor-pointer transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1B2A6B]"
     >
-      <h3 className="text-center text-lg font-bold text-[#1B2A6B] tracking-tight">
-        {MESES[mes]} {ano}
-      </h3>
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={(e) => navegar(e, 0)}
+          disabled={isMesAtual}
+          aria-label="Mês anterior"
+          className={`p-2 rounded-lg transition-colors ${
+            isMesAtual
+              ? "text-gray-300 cursor-not-allowed opacity-40"
+              : "text-gray-700 hover:bg-gray-100 cursor-pointer"
+          }`}
+        >
+          <svg
+            className="w-5 h-5 stroke-current"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="2.5"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15.75 19.5L8.25 12l7.5-7.5"
+            />
+          </svg>
+        </button>
+
+        <h3 className="text-center text-lg font-bold text-[#1B2A6B] tracking-tight">
+          {MESES[mes]} {ano}
+        </h3>
+
+        <button
+          type="button"
+          onClick={(e) => navegar(e, 1)}
+          disabled={!isMesAtual}
+          aria-label="Próximo mês"
+          className={`p-2 rounded-lg transition-colors ${
+            !isMesAtual
+              ? "text-gray-300 cursor-not-allowed opacity-40"
+              : "text-gray-700 hover:bg-gray-100 cursor-pointer"
+          }`}
+        >
+          <svg
+            className="w-5 h-5 stroke-current"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="2.5"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M8.25 4.5l7.5 7.5-7.5 7.5"
+            />
+          </svg>
+        </button>
+      </div>
 
       {carregando ? (
         <div
@@ -88,7 +151,7 @@ export default function CalendarioMensal({ onClick }: CalendarioMensalProps) {
             ))}
 
             {dias.map(({ dia, diaISO, disponivel }) => {
-              const ehHoje = diaISO === hojeISO;
+              const ehHoje = isMesAtual && diaISO === hojeISO;
               return (
                 <div
                   key={diaISO}
@@ -122,10 +185,6 @@ export default function CalendarioMensal({ onClick }: CalendarioMensalProps) {
           />
         </>
       )}
-
-      <p className="text-center text-xs text-gray-500">
-        📅 Toque no calendário para agendar
-      </p>
     </div>
   );
 }

@@ -273,25 +273,8 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
               const diaISO = formatarDataISO(dia);
               const { diaSemana, diaEMes } = formatarTituloDia(dia);
 
-              const { duplasLivres, todasDesabilitadas, totalmenteOcupado } =
+              const { duplasLivres, totalmenteOcupado } =
                 calcularDisponibilidadeDia(diaISO, agendamentos, duplas);
-
-              if (todasDesabilitadas) {
-                return (
-                  <div
-                    key={diaISO}
-                    className="bg-[#F8FAFC] border border-gray-200/90 rounded-2xl p-4 flex flex-col gap-1.5 opacity-80 shadow-xs"
-                  >
-                    <div className="text-sm font-bold text-gray-700">
-                      {diaSemana}, {diaEMes}
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
-                      <span>🔒</span>
-                      <span>Data indisponível para agendamento</span>
-                    </div>
-                  </div>
-                );
-              }
 
               const podeAgendar = !totalmenteOcupado;
 
@@ -307,34 +290,34 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
                     {diaSemana}, {diaEMes}
                   </div>
 
-                  {/* Pills com os nomes das duplas */}
-                  <div className="flex flex-wrap gap-2">
-                    {duplas.map((conf) => (
-                      <DuplaPill
-                        key={conf.id}
-                        texto={conf.nomesExibicao}
-                        livre={duplasLivres.includes(conf.id)}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Botão de Agendamento */}
                   {totalmenteOcupado ? (
-                    <button
-                      disabled
-                      className="w-full py-3 bg-gray-100 text-gray-400 rounded-xl font-bold text-sm cursor-not-allowed"
-                    >
+                    <div className="w-full py-3 bg-gray-100 text-gray-400 rounded-xl font-bold text-sm text-center">
                       Todos os almoços preenchidos
-                    </button>
+                    </div>
                   ) : (
-                    <button
-                      onClick={() =>
-                        handleAbrirAgendamento(dia, duplasLivres)
-                      }
-                      className="w-full py-3 bg-[#1B2A6B] hover:bg-[#152154] text-white rounded-xl font-bold text-sm tracking-wide transition-colors cursor-pointer shadow-xs active:scale-[0.99]"
-                    >
-                      Agendar para este dia
-                    </button>
+                    <>
+                      {/* Pills somente das duplas livres */}
+                      <div className="flex flex-wrap gap-2">
+                        {duplas
+                          .filter((conf) => duplasLivres.includes(conf.id))
+                          .map((conf) => (
+                            <DuplaPill
+                              key={conf.id}
+                              texto={conf.nomesExibicao}
+                              livre
+                            />
+                          ))}
+                      </div>
+
+                      <button
+                        onClick={() =>
+                          handleAbrirAgendamento(dia, duplasLivres)
+                        }
+                        className="w-full py-3 bg-[#1B2A6B] hover:bg-[#152154] text-white rounded-xl font-bold text-sm tracking-wide transition-colors cursor-pointer shadow-xs active:scale-[0.99]"
+                      >
+                        Agendar para este dia
+                      </button>
+                    </>
                   )}
                 </div>
               );

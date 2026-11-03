@@ -4,7 +4,7 @@ interface LegendaDisponibilidadeProps {
 }
 
 /** Cores das bolinhas, compartilhadas entre calendário e legendas */
-export const COR_BOLINHA_DISPONIVEL = "bg-[#3B82D4]";
+export const COR_BOLINHA_DISPONIVEL = "bg-[#1B2A6B]";
 export const COR_BOLINHA_INDISPONIVEL = "bg-gray-300";
 
 export default function LegendaDisponibilidade({
