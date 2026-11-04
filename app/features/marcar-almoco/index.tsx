@@ -16,9 +16,11 @@ import LegendaDisponibilidade from "@/app/components/LegendaDisponibilidade";
 
 interface MarcarAlmocoProps {
   onVoltar?: () => void;
+  /** Mês em que a tela abre: 0 = mês atual, 1 = próximo mês */
+  mesInicial?: 0 | 1;
 }
 
-export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
+export default function MarcarAlmoco({ onVoltar, mesInicial = 0 }: MarcarAlmocoProps) {
   const hoje = new Date();
   const mesAtual = hoje.getMonth();
   const anoAtual = hoje.getFullYear();
@@ -27,8 +29,8 @@ export default function MarcarAlmoco({ onVoltar }: MarcarAlmocoProps) {
   const mesSeguinte = mesAtual === 11 ? 0 : mesAtual + 1;
   const anoSeguinte = mesAtual === 11 ? anoAtual + 1 : anoAtual;
 
-  const [ano, setAno] = useState(anoAtual);
-  const [mes, setMes] = useState(mesAtual);
+  const [ano, setAno] = useState(mesInicial === 1 ? anoSeguinte : anoAtual);
+  const [mes, setMes] = useState(mesInicial === 1 ? mesSeguinte : mesAtual);
 
   const { agendamentos, duplas, carregando, erro, refresh: carregarDados } = useDados();
 

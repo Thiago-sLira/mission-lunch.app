@@ -15,6 +15,8 @@ type View = "home" | "marcar" | "visualizar" | "bloquear";
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<View>("home");
+  // Mês exibido no calendário da Home (0 = atual, 1 = próximo); repassado a "Marcar"
+  const [offsetCalendario, setOffsetCalendario] = useState<0 | 1>(0);
   const { isAdmin } = useAdmin();
   const { refresh } = useDados();
   const router = useRouter();
@@ -30,7 +32,12 @@ export default function Home() {
   }, [currentView]);
 
   if (currentView === "marcar") {
-    return <MarcarAlmoco onVoltar={() => setCurrentView("home")} />;
+    return (
+      <MarcarAlmoco
+        onVoltar={() => setCurrentView("home")}
+        mesInicial={offsetCalendario}
+      />
+    );
   }
 
   if (currentView === "visualizar") {
@@ -77,7 +84,11 @@ export default function Home() {
               onClick={() => setCurrentView("visualizar")}
             />
 
-            <CalendarioMensal onClick={() => setCurrentView("marcar")} />
+            <CalendarioMensal
+              onClick={() => setCurrentView("marcar")}
+              offset={offsetCalendario}
+              onOffsetChange={setOffsetCalendario}
+            />
 
             {isAdmin && (
               <ActionCard

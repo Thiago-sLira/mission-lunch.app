@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useDados } from "@/app/context/DadosContext";
 import { formatarDataISO, getDiasDoMes, MESES } from "@/app/utils/date";
 import { calcularDisponibilidadeDia } from "@/app/utils/disponibilidade";
@@ -13,12 +13,17 @@ const DIAS_SEMANA_CURTO = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 interface CalendarioMensalProps {
   onClick: () => void;
+  /** 0 = mês atual, 1 = próximo mês */
+  offset: 0 | 1;
+  onOffsetChange: (offset: 0 | 1) => void;
 }
 
-export default function CalendarioMensal({ onClick }: CalendarioMensalProps) {
+export default function CalendarioMensal({
+  onClick,
+  offset,
+  onOffsetChange,
+}: CalendarioMensalProps) {
   const { agendamentos, duplas, carregando, erro } = useDados();
-  // 0 = mês atual, 1 = próximo mês
-  const [offset, setOffset] = useState<0 | 1>(0);
 
   const hoje = new Date();
   const hojeISO = formatarDataISO(hoje);
@@ -45,7 +50,7 @@ export default function CalendarioMensal({ onClick }: CalendarioMensalProps) {
 
   const navegar = (e: React.MouseEvent, novoOffset: 0 | 1) => {
     e.stopPropagation();
-    setOffset(novoOffset);
+    onOffsetChange(novoOffset);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -150,33 +155,24 @@ export default function CalendarioMensal({ onClick }: CalendarioMensalProps) {
               <span key={`vazio-${i}`} />
             ))}
 
-            {dias.map(({ dia, diaISO, disponivel }) => {
-              const ehHoje = isMesAtual && diaISO === hojeISO;
-              return (
-                <div
-                  key={diaISO}
-                  className="flex flex-col items-center gap-0.5 py-1"
-                >
-                  <span
-                    className={`w-7 h-7 flex items-center justify-center rounded-full text-sm font-semibold ${
-                      ehHoje
-                        ? "ring-2 ring-[#1B2A6B] text-[#1B2A6B]"
-                        : "text-gray-900"
-                    }`}
-                  >
-                    {dia}
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    className={`w-2 h-2 rounded-full ${
-                      disponivel
-                        ? COR_BOLINHA_DISPONIVEL
-                        : COR_BOLINHA_INDISPONIVEL
-                    }`}
-                  />
-                </div>
-              );
-            })}
+            {dias.map(({ dia, diaISO, disponivel }) => (
+              <div
+                key={diaISO}
+                className="flex flex-col items-center gap-0.5 py-1"
+              >
+                <span className="w-7 h-7 flex items-center justify-center text-sm font-semibold text-gray-900">
+                  {dia}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={`w-2 h-2 rounded-full ${
+                    disponivel
+                      ? COR_BOLINHA_DISPONIVEL
+                      : COR_BOLINHA_INDISPONIVEL
+                  }`}
+                />
+              </div>
+            ))}
           </div>
 
           <LegendaDisponibilidade
