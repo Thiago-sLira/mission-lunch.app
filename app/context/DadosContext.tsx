@@ -32,6 +32,9 @@ interface DadosContextValue {
 
 const DadosContext = createContext<DadosContextValue | null>(null);
 
+/** Intervalo do polling de revalidação (apenas com a aba visível) */
+const INTERVALO_REVALIDACAO_MS = 180000;
+
 export function DadosProvider({ children }: { children: ReactNode }) {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [missionarios, setMissionarios] = useState<Missionario[]>([]);
@@ -72,8 +75,30 @@ export function DadosProvider({ children }: { children: ReactNode }) {
     return promessa;
   }, []);
 
+  // Carga inicial + revalidação silenciosa: ao voltar para a aba/janela e a cada
+  // 3 min (só com a aba visível). Chamadas simultâneas são deduplicadas em refresh().
   useEffect(() => {
     void refresh();
+
+    const aoMudarVisibilidade = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    const aoFocar = () => {
+      void refresh();
+    };
+
+    document.addEventListener("visibilitychange", aoMudarVisibilidade);
+    window.addEventListener("focus", aoFocar);
+
+    const intervalo = setInterval(() => {
+      if (document.visibilityState === "visible") void refresh();
+    }, INTERVALO_REVALIDACAO_MS);
+
+    return () => {
+      clearInterval(intervalo);
+      document.removeEventListener("visibilitychange", aoMudarVisibilidade);
+      window.removeEventListener("focus", aoFocar);
+    };
   }, [refresh]);
 
   const duplas = useMemo(() => agruparDuplas(missionarios), [missionarios]);
